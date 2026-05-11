@@ -1,0 +1,11 @@
+{
+  "name": "opencode-web-lite",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": ["service", "app"],
+  "scripts": {
+    "service:dev": "npm run dev --workspace=service",
+    "service:test": "npm test --workspace=service",
+    "service:build": "npm run build --workspace=service"
+  }
+}
