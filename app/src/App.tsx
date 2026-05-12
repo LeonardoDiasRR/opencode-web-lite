@@ -1,6 +1,8 @@
 import { Route, Routes } from 'react-router-dom';
 import { ChatPanel } from './features/chat/components/ChatPanel.js';
+import { CompactionPanel } from './features/compaction/components/CompactionPanel.js';
 import { ConnectionForm } from './features/connection/components/ConnectionForm.js';
+import { McpPanel } from './features/mcps/components/McpPanel.js';
 import { PluginPanel } from './features/plugins/components/PluginPanel.js';
 import { ProviderPanel } from './features/providers/components/ProviderPanel.js';
 import { SessionPanel } from './features/sessions/components/SessionPanel.js';
@@ -48,15 +50,19 @@ function HomePage() {
 
         <PluginPanel />
 
+        <McpPanel />
+
+        <CompactionPanel />
+
         <ChatPanel />
 
         <SessionPanel />
 
         <section className="rounded-3xl border border-zinc-800 bg-zinc-950/70 p-6">
           <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">Próxima fase</p>
-          <h2 className="mt-2 text-xl font-semibold text-white">MCPs + Compaction</h2>
+          <h2 className="mt-2 text-xl font-semibold text-white">UI Completa</h2>
           <p className="mt-2 text-sm text-zinc-400">
-            Com plugins declarativos, a Fase 9 adiciona MCPs por projeto e compactação de contexto.
+            Com MCPs e compactação, a Fase 10 consolida explorador de arquivos, terminal e layout final.
           </p>
         </section>
       </div>

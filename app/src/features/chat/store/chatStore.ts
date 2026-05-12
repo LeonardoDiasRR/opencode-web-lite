@@ -3,6 +3,7 @@ import { getPrimaryAgent } from '../../agents/services/primaryAgents.js';
 import type { PrimaryAgentId } from '../../agents/types/agent.js';
 import type { ProviderSelection } from '../../providers/types/provider.js';
 import { getPluginRegistry } from '../../plugins/services/pluginRegistry.js';
+import { useCompactionStore } from '../../compaction/store/compactionStore.js';
 import { buildSkillPromptContext } from '../../skills/services/skillPromptContext.js';
 import { useSkillStore } from '../../skills/store/skillStore.js';
 import { parseSubagentMention } from '../../subagents/services/mentionParser.js';
@@ -63,7 +64,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const messageContent = parsed.content || content;
     const skillContext = buildSkillPromptContext(useSkillStore.getState().getPromptSkills(config));
     const basePrompt = parsed.subagent ? buildSubagentPrompt(parsed.subagent, agent) : buildSystemPrompt(agent);
-    const systemPrompt = skillContext ? `${basePrompt}\n\n${skillContext}` : basePrompt;
+    const compactSummary = useCompactionStore.getState().summary?.summary;
+    const contextPrompt = compactSummary ? `${basePrompt}\n\nResumo compacto da conversa anterior:\n${compactSummary}` : basePrompt;
+    const systemPrompt = skillContext ? `${contextPrompt}\n\n${skillContext}` : contextPrompt;
     const previousMessages = get().messages;
     const metadata = parsed.subagent ? { subagentId: parsed.subagent.id } : undefined;
     const before = await getPluginRegistry().runMessageBefore({ content: messageContent, metadata });

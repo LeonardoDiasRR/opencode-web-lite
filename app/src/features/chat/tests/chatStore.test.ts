@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useSkillStore } from '../../skills/store/skillStore.js';
 import { resetPluginRegistry, setPluginRegistry } from '../../plugins/services/pluginRegistry.js';
+import { useCompactionStore } from '../../compaction/store/compactionStore.js';
 import { useChatStore } from '../store/chatStore.js';
 
 function streamResponse(text: string) {
@@ -14,6 +15,7 @@ describe('chatStore', () => {
     useChatStore.setState({ activeAgent: 'build', messages: [], status: 'idle', error: null });
     useSkillStore.setState({ skills: [], status: 'idle', error: null, approvedSkills: [] });
     resetPluginRegistry();
+    useCompactionStore.setState({ summary: null, status: 'idle', error: null });
   });
 
   it('accumulates assistant deltas', () => {
@@ -83,5 +85,13 @@ describe('chatStore', () => {
 
     expect(useChatStore.getState().messages[0].content).toBe('changed');
     expect(after).toHaveBeenCalled();
+  });
+
+  it('includes compact summary in system prompt', async () => {
+    useCompactionStore.setState({ summary: { summary: 'Resumo antigo', createdAt: 'a', messageCount: 20 } });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(streamResponse('data: [DONE]\n\n'));
+    await useChatStore.getState().sendMessage('Oi', { provider: { name: 'openrouter', model: 'm', apiKey: 'key', baseUrl: 'https://api.test/v1' } });
+    const request = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string) as { messages: Array<{ content: string }> };
+    expect(request.messages[0].content).toContain('Resumo antigo');
   });
 });
