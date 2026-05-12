@@ -16,5 +16,6 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Selecionar workspace' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Configurar provedor LLM' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Chat com agentes primários' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Gerenciar sessões' })).toBeInTheDocument();
   });
 });

@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { AgentSwitcher } from '../../agents/components/AgentSwitcher.js';
 import { useConnectionStore } from '../../connection/store/connectionStore.js';
+import { useSessionStore } from '../../sessions/store/sessionStore.js';
 import { useWorkspaceStore } from '../../workspace/store/workspaceStore.js';
 import { useChatStore } from '../store/chatStore.js';
 
@@ -8,6 +9,7 @@ export function ChatPanel() {
   const connection = useConnectionStore();
   const workspace = useWorkspaceStore();
   const chat = useChatStore();
+  const sessions = useSessionStore();
   const [draft, setDraft] = useState('');
   const ready = connection.status === 'connected' && workspace.status === 'ready' && Boolean(workspace.config?.provider);
   const disabled = !ready || chat.status === 'streaming';
@@ -17,7 +19,13 @@ export function ChatPanel() {
     if (!draft.trim()) return;
     const content = draft;
     setDraft('');
-    void chat.sendMessage(content, workspace.config);
+    sessions.ensureActiveSession(workspace.path, chat.activeAgent);
+    void chat.sendMessage(content, workspace.config).then((sent) => {
+      if (sent) {
+        const latest = useChatStore.getState();
+        void sessions.saveActiveSession({ baseUrl: connection.baseUrl, token: connection.token }, workspace.path, latest.messages, latest.activeAgent);
+      }
+    });
   };
 
   return (
@@ -26,6 +34,7 @@ export function ChatPanel() {
         <div>
           <p className="text-sm uppercase tracking-[0.3em] text-orange-300">Etapa 4</p>
           <h2 className="mt-2 text-2xl font-semibold text-white">Chat com agentes primários</h2>
+          {sessions.activeSession && <p className="mt-1 text-xs text-zinc-500">Sessão: {sessions.activeSession.id}</p>}
           <p className="mt-2 text-sm text-zinc-400">Use Build para executar e Plan para planejar com permissões em modo ask.</p>
         </div>
         <AgentSwitcher activeAgent={chat.activeAgent} onChange={chat.setActiveAgent} />

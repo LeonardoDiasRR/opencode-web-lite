@@ -16,7 +16,8 @@ interface ChatState {
   addMessage: (message: Omit<ChatMessage, 'id' | 'createdAt'>) => ChatMessage;
   appendAssistantDelta: (messageId: string, delta: string) => void;
   clear: () => void;
-  sendMessage: (content: string, config: WorkspaceConfig | null) => Promise<void>;
+  restore: (messages: ChatMessage[], activeAgent?: PrimaryAgentId) => void;
+  sendMessage: (content: string, config: WorkspaceConfig | null) => Promise<boolean>;
 }
 
 function createMessage(message: Omit<ChatMessage, 'id' | 'createdAt'>): ChatMessage {
@@ -42,11 +43,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
   clear() {
     set({ messages: [], status: 'idle', error: null, activeAgent: 'build' });
   },
+  restore(messages, activeAgent = 'build') {
+    set({ messages, activeAgent, status: 'idle', error: null });
+  },
   async sendMessage(content, config) {
     const provider = config?.provider as ProviderSelection | undefined;
     if (!provider?.apiKey || !provider.model || !provider.baseUrl) {
       set({ status: 'error', error: 'Configure um provider e modelo antes de enviar mensagens.' });
-      return;
+      return false;
     }
 
     const agent = getPrimaryAgent(get().activeAgent, config);
@@ -63,8 +67,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
     try {
       await streamChatCompletion(provider, requestMessages, (delta) => get().appendAssistantDelta(assistantMessage.id, delta));
       set({ status: 'idle' });
+      return true;
     } catch (error) {
       set({ status: 'error', error: error instanceof Error ? error.message : String(error) });
+      return false;
     }
   },
 }));

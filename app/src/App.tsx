@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom';
 import { ChatPanel } from './features/chat/components/ChatPanel.js';
 import { ConnectionForm } from './features/connection/components/ConnectionForm.js';
 import { ProviderPanel } from './features/providers/components/ProviderPanel.js';
+import { SessionPanel } from './features/sessions/components/SessionPanel.js';
 import { WorkspacePanel } from './features/workspace/components/WorkspacePanel.js';
 
 export function App() {
@@ -43,11 +44,13 @@ function HomePage() {
 
         <ChatPanel />
 
+        <SessionPanel />
+
         <section className="rounded-3xl border border-zinc-800 bg-zinc-950/70 p-6">
           <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">Próxima fase</p>
-          <h2 className="mt-2 text-xl font-semibold text-white">Gerenciamento de Sessões</h2>
+          <h2 className="mt-2 text-xl font-semibold text-white">Subagentes</h2>
           <p className="mt-2 text-sm text-zinc-400">
-            Com o chat funcionando, a Fase 5 adiciona IDs de sessão, listagem, retomada, título e resumo.
+            Com sessões persistidas, a Fase 6 adiciona @mentions para General, Explore e Scout.
           </p>
         </section>
       </div>
