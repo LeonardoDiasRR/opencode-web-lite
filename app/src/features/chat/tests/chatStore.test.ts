@@ -37,4 +37,19 @@ describe('chatStore', () => {
 
     expect(useChatStore.getState().error).toBe('Configure um provider e modelo antes de enviar mensagens.');
   });
+
+  it('routes valid mentions to subagents without changing active primary agent', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(streamResponse('data: {"choices":[{"delta":{"content":"Achei"}}]}\n\ndata: [DONE]\n\n'));
+
+    await useChatStore.getState().sendMessage('@explore encontre sessões', {
+      provider: { name: 'openrouter', model: 'm', apiKey: 'key', baseUrl: 'https://api.test/v1' },
+    });
+
+    const state = useChatStore.getState();
+    expect(state.activeAgent).toBe('build');
+    expect(state.messages[0]).toMatchObject({ content: 'encontre sessões', metadata: { subagentId: 'explore' } });
+    expect(state.messages[1]).toMatchObject({ content: 'Achei', metadata: { subagentId: 'explore' } });
+    const request = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string) as { messages: Array<{ content: string }> };
+    expect(request.messages[0].content).toContain('subagente Explore');
+  });
 });

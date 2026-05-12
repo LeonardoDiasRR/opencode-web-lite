@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { AgentSwitcher } from '../../agents/components/AgentSwitcher.js';
 import { useConnectionStore } from '../../connection/store/connectionStore.js';
 import { useSessionStore } from '../../sessions/store/sessionStore.js';
+import { SubagentHint } from '../../subagents/components/SubagentHint.js';
 import { useWorkspaceStore } from '../../workspace/store/workspaceStore.js';
 import { useChatStore } from '../store/chatStore.js';
 
@@ -35,6 +36,7 @@ export function ChatPanel() {
           <p className="text-sm uppercase tracking-[0.3em] text-orange-300">Etapa 4</p>
           <h2 className="mt-2 text-2xl font-semibold text-white">Chat com agentes primários</h2>
           {sessions.activeSession && <p className="mt-1 text-xs text-zinc-500">Sessão: {sessions.activeSession.id}</p>}
+          <SubagentHint />
           <p className="mt-2 text-sm text-zinc-400">Use Build para executar e Plan para planejar com permissões em modo ask.</p>
         </div>
         <AgentSwitcher activeAgent={chat.activeAgent} onChange={chat.setActiveAgent} />
@@ -44,7 +46,10 @@ export function ChatPanel() {
         {chat.messages.length === 0 && <p className="text-sm text-zinc-500">Nenhuma mensagem ainda.</p>}
         {chat.messages.map((message) => (
           <article className="rounded-2xl bg-zinc-950 p-4" key={message.id}>
-            <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">{message.role === 'user' ? 'Você' : message.agentId ?? 'assistant'}</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
+              {message.role === 'user' ? 'Você' : message.agentId ?? 'assistant'}
+              {typeof message.metadata?.subagentId === 'string' && <span className="ml-2 rounded-full bg-orange-300/10 px-2 py-1 text-orange-200">@{message.metadata.subagentId}</span>}
+            </p>
             <p className="mt-2 whitespace-pre-wrap text-sm text-zinc-100">{message.content || (chat.status === 'streaming' ? 'Digitando...' : '')}</p>
           </article>
         ))}

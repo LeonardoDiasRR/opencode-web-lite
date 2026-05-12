@@ -43,4 +43,20 @@ describe('sessionStore', () => {
     expect(useSessionStore.getState().activeSession?.status).toBe('closed');
     expect(useSessionStore.getState().activeSession?.summary?.title).toBe('Implementar login');
   });
+
+  it('preserves message metadata in active session', async () => {
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true })));
+    useSessionStore.getState().createSession('/project', 'build');
+
+    await useSessionStore.getState().saveActiveSession(
+      { baseUrl: 'http://localhost:7847', token: 'secret' },
+      '/project',
+      [{ id: '1', role: 'assistant', content: 'ok', createdAt: 'a', metadata: { subagentId: 'explore' } }],
+      'build'
+    );
+
+    expect(useSessionStore.getState().activeSession?.messages[0].metadata).toEqual({ subagentId: 'explore' });
+  });
 });

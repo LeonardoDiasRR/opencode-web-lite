@@ -48,4 +48,24 @@ describe('ChatPanel', () => {
     expect(await screen.findByText('Plano')).toBeInTheDocument();
     expect(useChatStore.getState().activeAgent).toBe('plan');
   });
+
+  it('shows subagent hint and badge', async () => {
+    act(() => {
+      useConnectionStore.setState({ baseUrl: 'http://localhost:7847', token: 'secret', serviceVersion: '0.1.0', status: 'connected' });
+      useWorkspaceStore.setState({
+        path: 'C:\\project',
+        status: 'ready',
+        error: null,
+        config: { provider: { name: 'openrouter', model: 'm', apiKey: 'key', baseUrl: 'https://api.test/v1' } },
+      });
+    });
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(streamResponse('data: {"choices":[{"delta":{"content":"Busca"}}]}\n\ndata: [DONE]\n\n'));
+    render(<ChatPanel />);
+
+    expect(screen.getByText(/@general/)).toBeInTheDocument();
+    await userEvent.type(screen.getByPlaceholderText('Peça uma alteração ou plano...'), '@explore procure rotas');
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar' }));
+
+    expect((await screen.findAllByText('@explore')).length).toBeGreaterThanOrEqual(2);
+  });
 });

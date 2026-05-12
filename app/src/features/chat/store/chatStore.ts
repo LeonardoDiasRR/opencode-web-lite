@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { getPrimaryAgent } from '../../agents/services/primaryAgents.js';
 import type { PrimaryAgentId } from '../../agents/types/agent.js';
 import type { ProviderSelection } from '../../providers/types/provider.js';
+import { parseSubagentMention } from '../../subagents/services/mentionParser.js';
+import { buildSubagentPrompt } from '../../subagents/services/subagentPromptBuilder.js';
 import type { WorkspaceConfig } from '../../workspace/types/workspace.js';
 import { streamChatCompletion } from '../services/chatClient.js';
 import { buildSystemPrompt } from '../services/promptBuilder.js';
@@ -54,11 +56,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
 
     const agent = getPrimaryAgent(get().activeAgent, config);
+    const parsed = parseSubagentMention(content);
+    const messageContent = parsed.content || content;
+    const systemPrompt = parsed.subagent ? buildSubagentPrompt(parsed.subagent, agent) : buildSystemPrompt(agent);
     const previousMessages = get().messages;
-    const userMessage = get().addMessage({ role: 'user', content, agentId: agent.id });
-    const assistantMessage = get().addMessage({ role: 'assistant', content: '', agentId: agent.id });
+    const metadata = parsed.subagent ? { subagentId: parsed.subagent.id } : undefined;
+    const userMessage = get().addMessage({ role: 'user', content: messageContent, agentId: agent.id, metadata });
+    const assistantMessage = get().addMessage({ role: 'assistant', content: '', agentId: agent.id, metadata });
     const requestMessages = [
-      { role: 'system' as const, content: buildSystemPrompt(agent) },
+      { role: 'system' as const, content: systemPrompt },
       ...previousMessages.map(({ role, content }) => ({ role, content })),
       { role: userMessage.role, content: userMessage.content },
     ];
