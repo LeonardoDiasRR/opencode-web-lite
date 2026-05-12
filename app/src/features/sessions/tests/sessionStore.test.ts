@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useSessionStore } from '../store/sessionStore.js';
+import { resetPluginRegistry, setPluginRegistry } from '../../plugins/services/pluginRegistry.js';
 
 describe('sessionStore', () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    resetPluginRegistry();
     useSessionStore.setState({ activeSession: null, sessions: [], status: 'idle', error: null });
   });
 
@@ -58,5 +60,17 @@ describe('sessionStore', () => {
     );
 
     expect(useSessionStore.getState().activeSession?.messages[0].metadata).toEqual({ subagentId: 'explore' });
+  });
+
+  it('runs session close hooks', async () => {
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true })))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ success: true })));
+    setPluginRegistry({ hooks: [], register: vi.fn(), listHooks: vi.fn(() => []), runMessageBefore: vi.fn(async (input) => input), runMessageAfter: vi.fn(), runSessionClose: vi.fn(async () => ({ summary: { title: 'Plugin title', summary: 'Plugin summary' } })) });
+    useSessionStore.getState().createSession('/project', 'build');
+
+    await useSessionStore.getState().closeActiveSession({ baseUrl: 'http://localhost:7847', token: 'secret' }, '/project', [], 'build');
+
+    expect(useSessionStore.getState().activeSession?.summary?.title).toBe('Plugin title');
   });
 });

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { getPrimaryAgent } from '../../agents/services/primaryAgents.js';
 import type { PrimaryAgentId } from '../../agents/types/agent.js';
 import type { ProviderSelection } from '../../providers/types/provider.js';
+import { getPluginRegistry } from '../../plugins/services/pluginRegistry.js';
 import { buildSkillPromptContext } from '../../skills/services/skillPromptContext.js';
 import { useSkillStore } from '../../skills/store/skillStore.js';
 import { parseSubagentMention } from '../../subagents/services/mentionParser.js';
@@ -65,8 +66,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const systemPrompt = skillContext ? `${basePrompt}\n\n${skillContext}` : basePrompt;
     const previousMessages = get().messages;
     const metadata = parsed.subagent ? { subagentId: parsed.subagent.id } : undefined;
-    const userMessage = get().addMessage({ role: 'user', content: messageContent, agentId: agent.id, metadata });
-    const assistantMessage = get().addMessage({ role: 'assistant', content: '', agentId: agent.id, metadata });
+    const before = await getPluginRegistry().runMessageBefore({ content: messageContent, metadata });
+    if (before.cancelled) {
+      set({ status: 'error', error: before.error ?? 'Mensagem cancelada por plugin.' });
+      return false;
+    }
+    const userMessage = get().addMessage({ role: 'user', content: before.content, agentId: agent.id, metadata: before.metadata });
+    const assistantMessage = get().addMessage({ role: 'assistant', content: '', agentId: agent.id, metadata: before.metadata });
     const requestMessages = [
       { role: 'system' as const, content: systemPrompt },
       ...previousMessages.map(({ role, content }) => ({ role, content })),
@@ -76,6 +82,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ status: 'streaming', error: null });
     try {
       await streamChatCompletion(provider, requestMessages, (delta) => get().appendAssistantDelta(assistantMessage.id, delta));
+      await getPluginRegistry().runMessageAfter({ userMessage, assistantMessage: get().messages.find((message) => message.id === assistantMessage.id), messages: get().messages });
       set({ status: 'idle' });
       return true;
     } catch (error) {

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useSkillStore } from '../../skills/store/skillStore.js';
+import { resetPluginRegistry, setPluginRegistry } from '../../plugins/services/pluginRegistry.js';
 import { useChatStore } from '../store/chatStore.js';
 
 function streamResponse(text: string) {
@@ -12,6 +13,7 @@ describe('chatStore', () => {
     vi.restoreAllMocks();
     useChatStore.setState({ activeAgent: 'build', messages: [], status: 'idle', error: null });
     useSkillStore.setState({ skills: [], status: 'idle', error: null, approvedSkills: [] });
+    resetPluginRegistry();
   });
 
   it('accumulates assistant deltas', () => {
@@ -70,5 +72,16 @@ describe('chatStore', () => {
     const request = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string) as { messages: Array<{ content: string }> };
     expect(request.messages[0].content).toContain('Skills carregadas:');
     expect(request.messages[0].content).toContain('Use docs');
+  });
+
+  it('runs plugin message hooks', async () => {
+    const after = vi.fn();
+    setPluginRegistry({ hooks: [], register: vi.fn(), listHooks: vi.fn(() => []), runMessageBefore: vi.fn(async (input) => ({ ...input, content: 'changed' })), runMessageAfter: after, runSessionClose: vi.fn(async () => ({})) });
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(streamResponse('data: {"choices":[{"delta":{"content":"ok"}}]}\n\ndata: [DONE]\n\n'));
+
+    await useChatStore.getState().sendMessage('original', { provider: { name: 'openrouter', model: 'm', apiKey: 'key', baseUrl: 'https://api.test/v1' } });
+
+    expect(useChatStore.getState().messages[0].content).toBe('changed');
+    expect(after).toHaveBeenCalled();
   });
 });

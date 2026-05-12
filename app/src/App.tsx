@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom';
 import { ChatPanel } from './features/chat/components/ChatPanel.js';
 import { ConnectionForm } from './features/connection/components/ConnectionForm.js';
+import { PluginPanel } from './features/plugins/components/PluginPanel.js';
 import { ProviderPanel } from './features/providers/components/ProviderPanel.js';
 import { SessionPanel } from './features/sessions/components/SessionPanel.js';
 import { SkillPanel } from './features/skills/components/SkillPanel.js';
@@ -45,15 +46,17 @@ function HomePage() {
 
         <SkillPanel />
 
+        <PluginPanel />
+
         <ChatPanel />
 
         <SessionPanel />
 
         <section className="rounded-3xl border border-zinc-800 bg-zinc-950/70 p-6">
           <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">Próxima fase</p>
-          <h2 className="mt-2 text-xl font-semibold text-white">Plugins</h2>
+          <h2 className="mt-2 text-xl font-semibold text-white">MCPs + Compaction</h2>
           <p className="mt-2 text-sm text-zinc-400">
-            Com skills descobertas, a Fase 8 adiciona carregamento JS/TS, hooks e ferramentas customizadas.
+            Com plugins declarativos, a Fase 9 adiciona MCPs por projeto e compactação de contexto.
           </p>
         </section>
       </div>

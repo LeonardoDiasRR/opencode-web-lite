@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { PrimaryAgentId } from '../../agents/types/agent.js';
 import type { ChatMessage } from '../../chat/types/chat.js';
 import type { ServiceConnection } from '../../connection/types/service.js';
+import { getPluginRegistry } from '../../plugins/services/pluginRegistry.js';
 import { createSessionId } from '../services/sessionId.js';
 import { createFallbackSessionSummary } from '../services/sessionAgents.js';
 import { readSession, readSessionIndex, saveSession, saveSessionIndex } from '../services/sessionStorage.js';
@@ -76,9 +77,12 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     const current = get().activeSession;
     if (!current) return;
     const now = new Date().toISOString();
-    const session: SessionRecord = { ...current, messages, activeAgent, status: 'closed', updatedAt: now, closedAt: now, summary: createFallbackSessionSummary(messages) };
+    let session: SessionRecord = { ...current, messages, activeAgent, status: 'closed', updatedAt: now, closedAt: now, summary: createFallbackSessionSummary(messages) };
     set({ status: 'closing', error: null, activeSession: session });
     try {
+      const pluginResult = await getPluginRegistry().runSessionClose({ session });
+      if (pluginResult.summary) session = { ...session, summary: pluginResult.summary };
+      set({ activeSession: session });
       await saveSession(connection, workspacePath, session);
       const entries = [toIndexEntry(session), ...get().sessions.filter((entry) => entry.id !== session.id)];
       await saveSessionIndex(connection, workspacePath, entries);
