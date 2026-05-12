@@ -20,7 +20,7 @@ async function start() {
   const token = await loadOrCreateToken(TOKEN_FILE);
 
   const app = express();
-  app.use(cors({ origin: /^https?:\/\/localhost(:\d+)?$/ }));
+  app.use(cors({ origin: /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/ }));
   app.use(express.json({ limit: '10mb' }));
 
   app.use('/health', healthRouter);
@@ -28,6 +28,13 @@ async function start() {
   app.use('/fs', fsRouter);
   app.use('/terminal', terminalRouter);
   app.use('/workspace', workspaceRouter);
+  app.use((err: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (res.headersSent) {
+      next(err);
+      return;
+    }
+    res.status(400).json({ error: 'Invalid request payload', code: 'INVALID_PAYLOAD' });
+  });
 
   const httpServer = createServer(app);
 

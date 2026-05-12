@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router-dom';
 import { ChatPanel } from './features/chat/components/ChatPanel.js';
+import { ApprovalPanel } from './features/agent-runtime/components/ApprovalPanel.js';
 import { CompactionPanel } from './features/compaction/components/CompactionPanel.js';
 import { ConnectionForm } from './features/connection/components/ConnectionForm.js';
 import { useConnectionStore } from './features/connection/store/connectionStore.js';
@@ -90,6 +91,7 @@ function Inspector() {
       <SkillPanel />
       <PluginPanel />
       <McpPanel />
+      <ApprovalPanel />
       <CompactionPanel />
       <div id="configurações"><WorkspaceSettingsPanel /></div>
     </div>

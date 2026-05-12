@@ -12,7 +12,7 @@ terminalRouter.post('/exec', async (req, res) => {
     timeoutMs?: number;
   };
 
-  if (!command || !cwd) {
+  if (!command || !cwd || (args !== undefined && !Array.isArray(args)) || (timeoutMs !== undefined && typeof timeoutMs !== 'number')) {
     res.status(400).json({ error: 'command and cwd required', code: 'MISSING_PARAM' });
     return;
   }

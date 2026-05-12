@@ -79,6 +79,12 @@ describe('authMiddleware', () => {
     expect(res.body.ok).toBe(true);
   });
 
+  it('allows request with token query param for EventSource clients', async () => {
+    const res = await request(app).get(`/protected?token=${testToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.ok).toBe(true);
+  });
+
   it('rejects request without token', async () => {
     const res = await request(app).get('/protected');
     expect(res.status).toBe(401);

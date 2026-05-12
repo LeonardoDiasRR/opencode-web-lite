@@ -29,4 +29,8 @@ describe('execCommand', () => {
       execCommand({ command: 'node', args: ['-e', 'setTimeout(()=>{},10000)'], cwd: tmpdir(), timeoutMs: 500 })
     ).rejects.toThrow(/timed out/i);
   });
+
+  it('rejects invalid timeout values', async () => {
+    await expect(execCommand({ command: 'node', args: ['-e', ''], cwd: tmpdir(), timeoutMs: -1 })).rejects.toThrow(/positive number/i);
+  });
 });

@@ -1,12 +1,14 @@
 import type { ChatMessage } from '../../chat/types/chat.js';
 import type { SessionRecord, SessionSummary } from '../../sessions/types/session.js';
 import type { DiscoveredPlugin, PluginHookName } from '../types/plugin.js';
+import type { ToolCall, ToolResult } from '../../agent-runtime/types/toolCall.js';
 
 export interface MessageBeforeInput { content: string; metadata?: Record<string, unknown> }
 export interface MessageBeforeResult { content: string; metadata?: Record<string, unknown>; cancelled?: boolean; error?: string }
 export interface MessageAfterInput { userMessage: ChatMessage; assistantMessage?: ChatMessage; messages: ChatMessage[] }
 export interface SessionCloseInput { session: SessionRecord }
 export interface SessionCloseResult { summary?: SessionSummary }
+export interface ToolHookInput { call: ToolCall; result?: ToolResult }
 
 export interface PluginRegistry {
   hooks: Array<{ pluginName: string; hook: PluginHookName }>;
@@ -14,6 +16,8 @@ export interface PluginRegistry {
   listHooks: (hook: PluginHookName) => Array<{ pluginName: string; hook: PluginHookName }>;
   runMessageBefore: (input: MessageBeforeInput) => Promise<MessageBeforeResult>;
   runMessageAfter: (input: MessageAfterInput) => Promise<void>;
+  runToolBefore?: (input: ToolHookInput) => Promise<void>;
+  runToolAfter?: (input: ToolHookInput) => Promise<void>;
   runSessionClose: (input: SessionCloseInput) => Promise<SessionCloseResult>;
 }
 
@@ -24,6 +28,8 @@ function createRegistry(): PluginRegistry {
     listHooks(hook) { return this.hooks.filter((entry) => entry.hook === hook); },
     async runMessageBefore(input) { return input; },
     async runMessageAfter() {},
+    async runToolBefore() {},
+    async runToolAfter() {},
     async runSessionClose() { return {}; },
   };
 }

@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { getPrimaryAgent } from '../../agents/services/primaryAgents.js';
 import type { PrimaryAgentId } from '../../agents/types/agent.js';
+import { processRuntimeToolCalls } from '../../agent-runtime/services/agentRuntime.js';
+import { useConnectionStore } from '../../connection/store/connectionStore.js';
 import type { ProviderSelection } from '../../providers/types/provider.js';
 import { getPluginRegistry } from '../../plugins/services/pluginRegistry.js';
 import { useCompactionStore } from '../../compaction/store/compactionStore.js';
@@ -8,6 +10,7 @@ import { buildSkillPromptContext } from '../../skills/services/skillPromptContex
 import { useSkillStore } from '../../skills/store/skillStore.js';
 import { parseSubagentMention } from '../../subagents/services/mentionParser.js';
 import { buildSubagentPrompt } from '../../subagents/services/subagentPromptBuilder.js';
+import { useWorkspaceStore } from '../../workspace/store/workspaceStore.js';
 import type { WorkspaceConfig } from '../../workspace/types/workspace.js';
 import { streamChatCompletion } from '../services/chatClient.js';
 import { buildSystemPrompt } from '../services/promptBuilder.js';
@@ -85,6 +88,27 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ status: 'streaming', error: null });
     try {
       await streamChatCompletion(provider, requestMessages, (delta) => get().appendAssistantDelta(assistantMessage.id, delta));
+      const currentAssistant = get().messages.find((message) => message.id === assistantMessage.id);
+      const connection = useConnectionStore.getState();
+      const workspace = useWorkspaceStore.getState();
+      const runtime = await processRuntimeToolCalls({
+        content: currentAssistant?.content ?? '',
+        connection: { baseUrl: connection.baseUrl, token: connection.token },
+        workspacePath: workspace.path,
+        agent,
+        subagent: parsed.subagent,
+      });
+      if (runtime.content !== currentAssistant?.content) {
+        set({ messages: get().messages.map((message) => (message.id === assistantMessage.id ? { ...message, content: runtime.content } : message)) });
+      }
+      for (const event of runtime.events) {
+        get().addMessage({
+          role: 'assistant',
+          content: event.result?.error ?? event.result?.preview ?? `Aguardando aprovação para ${event.call.name}.`,
+          agentId: agent.id,
+          metadata: { ...before.metadata, runtime: event },
+        });
+      }
       await getPluginRegistry().runMessageAfter({ userMessage, assistantMessage: get().messages.find((message) => message.id === assistantMessage.id), messages: get().messages });
       set({ status: 'idle' });
       return true;

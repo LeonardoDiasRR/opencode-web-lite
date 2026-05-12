@@ -4,8 +4,15 @@
   "private": true,
   "workspaces": ["service", "app"],
   "scripts": {
+    "app:dev": "npm run dev --workspace=app",
+    "app:test": "npm test --workspace=app",
+    "app:build": "npm run build --workspace=app",
+    "app:e2e": "npm run e2e --workspace=app",
     "service:dev": "npm run dev --workspace=service",
     "service:test": "npm test --workspace=service",
-    "service:build": "npm run build --workspace=service"
+    "service:build": "npm run build --workspace=service",
+    "test": "npm run service:test && npm run app:test",
+    "build": "npm run service:build && npm run app:build",
+    "check": "npm run test && npm run build"
   }
 }
