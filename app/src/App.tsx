@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router-dom';
 import { ConnectionForm } from './features/connection/components/ConnectionForm.js';
+import { ProviderPanel } from './features/providers/components/ProviderPanel.js';
 import { WorkspacePanel } from './features/workspace/components/WorkspacePanel.js';
 
 export function App() {
@@ -22,12 +23,12 @@ function HomePage() {
                 Conecte ao serviço local e prepare seu workspace.
               </h1>
               <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-300">
-                Esta fase entrega a base da SPA: autenticação com o serviço da Fase 1, seleção do projeto local e inicialização de `AGENTS.md` e `.opencode/opencode.json`.
+                Configure a conexão local, inicialize o workspace e selecione o provedor LLM que será usado pelos agentes.
               </p>
             </div>
             <div className="rounded-3xl border border-cyan-300/20 bg-cyan-300/10 p-5 text-sm text-cyan-100">
-              <p className="font-semibold text-cyan-50">Fase 2</p>
-              <p className="mt-2 text-cyan-100/80">SPA Core + Workspace</p>
+              <p className="font-semibold text-cyan-50">Fase 3</p>
+              <p className="mt-2 text-cyan-100/80">Provedores LLM</p>
             </div>
           </div>
         </header>
@@ -37,11 +38,13 @@ function HomePage() {
           <WorkspacePanel />
         </div>
 
+        <ProviderPanel />
+
         <section className="rounded-3xl border border-zinc-800 bg-zinc-950/70 p-6">
           <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">Próxima fase</p>
-          <h2 className="mt-2 text-xl font-semibold text-white">Provedores LLM</h2>
+          <h2 className="mt-2 text-xl font-semibold text-white">Chat + Agentes Primários</h2>
           <p className="mt-2 text-sm text-zinc-400">
-            Após o workspace estar pronto, a Fase 3 adiciona configuração de provider/model e persistência em `.opencode/opencode.json`.
+            Com provider/model configurados, a Fase 4 adiciona chat funcional com agentes Build e Plan.
           </p>
         </section>
       </div>

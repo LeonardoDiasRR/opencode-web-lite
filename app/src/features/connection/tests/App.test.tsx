@@ -14,5 +14,6 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Conecte ao serviço local e prepare seu workspace.' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Conectar ao serviço local' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Selecionar workspace' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Configurar provedor LLM' })).toBeInTheDocument();
   });
 });
