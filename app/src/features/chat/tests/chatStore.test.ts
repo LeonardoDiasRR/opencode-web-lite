@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { useSkillStore } from '../../skills/store/skillStore.js';
 import { useChatStore } from '../store/chatStore.js';
 
 function streamResponse(text: string) {
@@ -10,6 +11,7 @@ describe('chatStore', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     useChatStore.setState({ activeAgent: 'build', messages: [], status: 'idle', error: null });
+    useSkillStore.setState({ skills: [], status: 'idle', error: null, approvedSkills: [] });
   });
 
   it('accumulates assistant deltas', () => {
@@ -51,5 +53,22 @@ describe('chatStore', () => {
     expect(state.messages[1]).toMatchObject({ content: 'Achei', metadata: { subagentId: 'explore' } });
     const request = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string) as { messages: Array<{ content: string }> };
     expect(request.messages[0].content).toContain('subagente Explore');
+  });
+
+  it('includes only approved skill content in the system prompt', async () => {
+    useSkillStore.setState({
+      skills: [{ name: 'docs', origin: 'opencode', directoryPath: '', filePath: '', metadata: { name: 'docs', description: 'Docs' }, content: 'Use docs', loadState: 'loaded' }],
+      approvedSkills: ['docs'],
+    });
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(streamResponse('data: [DONE]\n\n'));
+
+    await useChatStore.getState().sendMessage('Oi', {
+      provider: { name: 'openrouter', model: 'm', apiKey: 'key', baseUrl: 'https://api.test/v1' },
+      skills: { docs: 'ask' },
+    });
+
+    const request = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string) as { messages: Array<{ content: string }> };
+    expect(request.messages[0].content).toContain('Skills carregadas:');
+    expect(request.messages[0].content).toContain('Use docs');
   });
 });
