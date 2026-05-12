@@ -1,4 +1,5 @@
 import { Route, Routes } from 'react-router-dom';
+import { ChatPanel } from './features/chat/components/ChatPanel.js';
 import { ConnectionForm } from './features/connection/components/ConnectionForm.js';
 import { ProviderPanel } from './features/providers/components/ProviderPanel.js';
 import { WorkspacePanel } from './features/workspace/components/WorkspacePanel.js';
@@ -27,8 +28,8 @@ function HomePage() {
               </p>
             </div>
             <div className="rounded-3xl border border-cyan-300/20 bg-cyan-300/10 p-5 text-sm text-cyan-100">
-              <p className="font-semibold text-cyan-50">Fase 3</p>
-              <p className="mt-2 text-cyan-100/80">Provedores LLM</p>
+              <p className="font-semibold text-cyan-50">Fase 4</p>
+              <p className="mt-2 text-cyan-100/80">MVP Chat + Agentes</p>
             </div>
           </div>
         </header>
@@ -40,11 +41,13 @@ function HomePage() {
 
         <ProviderPanel />
 
+        <ChatPanel />
+
         <section className="rounded-3xl border border-zinc-800 bg-zinc-950/70 p-6">
           <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">Próxima fase</p>
-          <h2 className="mt-2 text-xl font-semibold text-white">Chat + Agentes Primários</h2>
+          <h2 className="mt-2 text-xl font-semibold text-white">Gerenciamento de Sessões</h2>
           <p className="mt-2 text-sm text-zinc-400">
-            Com provider/model configurados, a Fase 4 adiciona chat funcional com agentes Build e Plan.
+            Com o chat funcionando, a Fase 5 adiciona IDs de sessão, listagem, retomada, título e resumo.
           </p>
         </section>
       </div>

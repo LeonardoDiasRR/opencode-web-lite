@@ -1,0 +1,70 @@
+import { create } from 'zustand';
+import { getPrimaryAgent } from '../../agents/services/primaryAgents.js';
+import type { PrimaryAgentId } from '../../agents/types/agent.js';
+import type { ProviderSelection } from '../../providers/types/provider.js';
+import type { WorkspaceConfig } from '../../workspace/types/workspace.js';
+import { streamChatCompletion } from '../services/chatClient.js';
+import { buildSystemPrompt } from '../services/promptBuilder.js';
+import type { ChatMessage, ChatStatus } from '../types/chat.js';
+
+interface ChatState {
+  activeAgent: PrimaryAgentId;
+  messages: ChatMessage[];
+  status: ChatStatus;
+  error: string | null;
+  setActiveAgent: (agent: PrimaryAgentId) => void;
+  addMessage: (message: Omit<ChatMessage, 'id' | 'createdAt'>) => ChatMessage;
+  appendAssistantDelta: (messageId: string, delta: string) => void;
+  clear: () => void;
+  sendMessage: (content: string, config: WorkspaceConfig | null) => Promise<void>;
+}
+
+function createMessage(message: Omit<ChatMessage, 'id' | 'createdAt'>): ChatMessage {
+  return { ...message, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+}
+
+export const useChatStore = create<ChatState>((set, get) => ({
+  activeAgent: 'build',
+  messages: [],
+  status: 'idle',
+  error: null,
+  setActiveAgent(activeAgent) {
+    set({ activeAgent });
+  },
+  addMessage(message) {
+    const next = createMessage(message);
+    set({ messages: [...get().messages, next] });
+    return next;
+  },
+  appendAssistantDelta(messageId, delta) {
+    set({ messages: get().messages.map((message) => (message.id === messageId ? { ...message, content: message.content + delta } : message)) });
+  },
+  clear() {
+    set({ messages: [], status: 'idle', error: null, activeAgent: 'build' });
+  },
+  async sendMessage(content, config) {
+    const provider = config?.provider as ProviderSelection | undefined;
+    if (!provider?.apiKey || !provider.model || !provider.baseUrl) {
+      set({ status: 'error', error: 'Configure um provider e modelo antes de enviar mensagens.' });
+      return;
+    }
+
+    const agent = getPrimaryAgent(get().activeAgent, config);
+    const previousMessages = get().messages;
+    const userMessage = get().addMessage({ role: 'user', content, agentId: agent.id });
+    const assistantMessage = get().addMessage({ role: 'assistant', content: '', agentId: agent.id });
+    const requestMessages = [
+      { role: 'system' as const, content: buildSystemPrompt(agent) },
+      ...previousMessages.map(({ role, content }) => ({ role, content })),
+      { role: userMessage.role, content: userMessage.content },
+    ];
+
+    set({ status: 'streaming', error: null });
+    try {
+      await streamChatCompletion(provider, requestMessages, (delta) => get().appendAssistantDelta(assistantMessage.id, delta));
+      set({ status: 'idle' });
+    } catch (error) {
+      set({ status: 'error', error: error instanceof Error ? error.message : String(error) });
+    }
+  },
+}));
