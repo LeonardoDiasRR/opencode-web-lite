@@ -2,12 +2,17 @@ import { Route, Routes } from 'react-router-dom';
 import { ChatPanel } from './features/chat/components/ChatPanel.js';
 import { CompactionPanel } from './features/compaction/components/CompactionPanel.js';
 import { ConnectionForm } from './features/connection/components/ConnectionForm.js';
+import { useConnectionStore } from './features/connection/store/connectionStore.js';
+import { FileExplorerPanel } from './features/file-explorer/components/FileExplorerPanel.js';
 import { McpPanel } from './features/mcps/components/McpPanel.js';
 import { PluginPanel } from './features/plugins/components/PluginPanel.js';
 import { ProviderPanel } from './features/providers/components/ProviderPanel.js';
 import { SessionPanel } from './features/sessions/components/SessionPanel.js';
 import { SkillPanel } from './features/skills/components/SkillPanel.js';
+import { TerminalPanel } from './features/terminal-ui/components/TerminalPanel.js';
 import { WorkspacePanel } from './features/workspace/components/WorkspacePanel.js';
+import { WorkspaceSettingsPanel } from './features/workspace-settings/components/WorkspaceSettingsPanel.js';
+import { AppShell } from './shared/ui/AppShell.js';
 
 export function App() {
   return (
@@ -18,54 +23,75 @@ export function App() {
 }
 
 function HomePage() {
-  return (
-    <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,#164e63,transparent_35%),radial-gradient(circle_at_bottom_right,#4c1d95,transparent_35%),#09090b] px-4 py-8 text-zinc-100 sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8">
-        <header className="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur md:p-10">
-          <p className="text-sm uppercase tracking-[0.35em] text-zinc-400">OpenCode Web Lite</p>
-          <div className="mt-6 grid gap-6 lg:grid-cols-[1.3fr_0.7fr] lg:items-end">
-            <div>
-              <h1 className="max-w-3xl text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl">
-                Conecte ao serviço local e prepare seu workspace.
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-300">
-                Configure a conexão local, inicialize o workspace e selecione o provedor LLM que será usado pelos agentes.
-              </p>
-            </div>
-            <div className="rounded-3xl border border-cyan-300/20 bg-cyan-300/10 p-5 text-sm text-cyan-100">
-              <p className="font-semibold text-cyan-50">Fase 4</p>
-              <p className="mt-2 text-cyan-100/80">MVP Chat + Agentes</p>
-            </div>
-          </div>
-        </header>
+  const connectionStatus = useConnectionStore((state) => state.status);
 
-        <div className="grid gap-6 lg:grid-cols-2">
+  if (connectionStatus !== 'connected') {
+    return (
+      <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,#164e63,transparent_35%),radial-gradient(circle_at_bottom_right,#4c1d95,transparent_35%),#09090b] px-4 py-8 text-zinc-100 sm:px-6 lg:px-8">
+        <div className="mx-auto grid max-w-4xl gap-6">
+          <Header />
           <ConnectionForm />
-          <WorkspacePanel />
+          <section className="rounded-3xl border border-zinc-800 bg-zinc-950/70 p-6">
+            <h2 className="text-xl font-semibold text-white">Checklist inicial</h2>
+            <p className="mt-2 text-sm text-zinc-400">Conecte ao serviço local, selecione o workspace, configure provider e comece pelo chat.</p>
+          </section>
         </div>
+      </main>
+    );
+  }
 
-        <ProviderPanel />
+  return (
+    <AppShell
+      sidebar={<Sidebar />}
+      main={<MainArea />}
+      inspector={<Inspector />}
+      terminal={<TerminalPanel />}
+    />
+  );
+}
 
-        <SkillPanel />
+function Header() {
+  return (
+    <header className="rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur md:p-10">
+      <p className="text-sm uppercase tracking-[0.35em] text-zinc-400">OpenCode Web Lite</p>
+      <h1 className="mt-6 max-w-3xl text-4xl font-black tracking-tight text-white sm:text-5xl">IDE local para agentes.</h1>
+      <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-300">Arquivos, terminal, chat, sessões e configurações em um shell responsivo.</p>
+    </header>
+  );
+}
 
-        <PluginPanel />
+function Sidebar() {
+  return (
+    <div className="space-y-4">
+      <nav aria-label="Painéis principais" className="grid gap-2 text-sm text-zinc-300">
+        {['Chat', 'Arquivos', 'Terminal', 'Sessões', 'Providers', 'Skills', 'Plugins', 'MCPs', 'Configurações'].map((item) => (
+          <a className="rounded-xl border border-zinc-800 px-3 py-2 hover:bg-white/10" href={`#${item.toLowerCase()}`} key={item}>{item}</a>
+        ))}
+      </nav>
+      <WorkspacePanel />
+      <SessionPanel />
+    </div>
+  );
+}
 
-        <McpPanel />
+function MainArea() {
+  return (
+    <div className="grid gap-4">
+      <div id="chat"><ChatPanel /></div>
+      <div id="arquivos"><FileExplorerPanel /></div>
+    </div>
+  );
+}
 
-        <CompactionPanel />
-
-        <ChatPanel />
-
-        <SessionPanel />
-
-        <section className="rounded-3xl border border-zinc-800 bg-zinc-950/70 p-6">
-          <p className="text-sm uppercase tracking-[0.3em] text-zinc-500">Próxima fase</p>
-          <h2 className="mt-2 text-xl font-semibold text-white">UI Completa</h2>
-          <p className="mt-2 text-sm text-zinc-400">
-            Com MCPs e compactação, a Fase 10 consolida explorador de arquivos, terminal e layout final.
-          </p>
-        </section>
-      </div>
-    </main>
+function Inspector() {
+  return (
+    <div className="grid gap-4">
+      <ProviderPanel />
+      <SkillPanel />
+      <PluginPanel />
+      <McpPanel />
+      <CompactionPanel />
+      <div id="configurações"><WorkspaceSettingsPanel /></div>
+    </div>
   );
 }
